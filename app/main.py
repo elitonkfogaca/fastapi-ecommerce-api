@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth.router import router as auth_router
 from app.products.router import router as products_router
@@ -20,6 +21,19 @@ app.include_router(products_router)
 app.include_router(categories_router)
 app.include_router(orders_router)
 app.include_router(users_router)
+
+# Configuração CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",  # Vite dev server
+        "http://localhost:3000",  # Caso use outro porto
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],  # Permite GET, POST, PUT, DELETE, etc
+    allow_headers=["*"],  # Permite todos os headers incluindo Authorization
+)
 
 
 @app.get("/health")
