@@ -6,9 +6,10 @@ API REST completa para e-commerce desenvolvida com FastAPI, PostgreSQL, SQLAlche
 
 ### 🔐 Autenticação & Autorização
 - ✅ JWT Authentication
+- ✅ OAuth2 compatible (Swagger UI)
+- ✅ Dual login endpoints (form-data + JSON)
 - ✅ Role-Based Access Control (RBAC)
 - ✅ Password hashing com Argon2
-- ✅ Refresh token support
 - ✅ Granular permissions (Admin/Customer)
 
 ### 👤 Gestão de Usuários
@@ -62,52 +63,52 @@ API REST completa para e-commerce desenvolvida com FastAPI, PostgreSQL, SQLAlche
 
 ## 🚀 Como Rodar
 
-### 1. Clone o repositório
+### Opção 1: Com Docker (Recomendado)
+
+#### 1. Clone o repositório
 
 ```bash
 git clone https://github.com/seu-usuario/fastapi-ecommerce-api.git
 cd fastapi-ecommerce-api
 ```
 
-### 2. Crie o arquivo .env
+#### 2. Configure as variáveis de ambiente
 
 ```bash
 cp .env.example .env
 ```
 
-Edite o `.env` com suas configurações (principalmente o `SECRET_KEY`):
+Edite o `.env` com suas configurações:
 
-```bash
-# Gerar SECRET_KEY segura
-openssl rand -hex 32
+```env
+APP_NAME=FastAPI E-commerce API
+DEBUG=True
+
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=ecommerce
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+
+SECRET_KEY=your-super-secret-key-min-32-chars
 ```
 
-### 3. Suba o banco de dados
+#### 3. Suba os containers
 
 ```bash
-docker compose up -d
+docker-compose up -d --build
 ```
 
-### 4. Instale as dependências
+#### 4. Execute as migrations
 
 ```bash
-# Com pip
-pip install -e .
-
-# Ou com uv (recomendado)
-uv sync
+docker-compose exec api alembic upgrade head
 ```
 
-### 5. Execute as migrations
+#### 5. (Opcional) Popule com dados de exemplo
 
 ```bash
-alembic upgrade head
-```
-
-### 6. Popule o banco com dados iniciais
-
-```bash
-python -m app.database.seed
+docker-compose exec api python -m app.database.seed
 ```
 
 Isso criará:
@@ -117,13 +118,100 @@ Isso criará:
 
 ⚠️ **IMPORTANTE: Troque a senha do admin após o primeiro login!**
 
-### 7. Rode a API
+#### 6. Acesse a aplicação
+
+- **API**: http://localhost:8000
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+- **Health Check**: http://localhost:8000/health
+
+#### Comandos úteis do Docker
+
+```bash
+# Ver logs da API
+docker-compose logs -f api
+
+# Ver logs do Postgres
+docker-compose logs -f postgres
+
+# Parar os containers
+docker-compose down
+
+# Parar e remover volumes (limpar banco)
+docker-compose down -v
+
+# Rebuild após mudanças
+docker-compose up -d --build
+
+# Acessar shell do container
+docker-compose exec api bash
+```
+
+---
+
+### Opção 2: Ambiente Local (Sem Docker)
+
+#### 1. Clone o repositório
+
+```bash
+git clone https://github.com/seu-usuario/fastapi-ecommerce-api.git
+cd fastapi-ecommerce-api
+```
+
+#### 2. Configure o PostgreSQL
+
+Instale o PostgreSQL 16 e crie o banco:
+
+```sql
+CREATE DATABASE ecommerce;
+```
+
+#### 3. Configure as variáveis de ambiente
+
+```bash
+cp .env.example .env
+```
+
+Edite o `.env`:
+
+```env
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=ecommerce
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=sua-senha
+SECRET_KEY=gere-com-openssl-rand-hex-32
+```
+
+#### 4. Instale as dependências
+
+```bash
+# Com uv (recomendado)
+uv sync
+
+# Ou com pip
+pip install -e .
+```
+
+#### 5. Execute as migrations
+
+```bash
+alembic upgrade head
+```
+
+#### 6. (Opcional) Popule com dados de exemplo
+
+```bash
+python -m app.database.seed
+```
+
+#### 7. Rode a API
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-### 8. Acesse a documentação
+#### 8. Acesse a aplicação
 
 - **Swagger UI**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
@@ -136,8 +224,11 @@ uvicorn app.main:app --reload
 | Método | Endpoint | Descrição | Auth |
 |--------|----------|-----------|------|
 | POST | `/api/v1/auth/register` | Registrar novo usuário | ❌ |
-| POST | `/api/v1/auth/login` | Login | ❌ |
+| POST | `/api/v1/auth/login` | Login (OAuth2 form-data para Swagger) | ❌ |
+| POST | `/api/v1/auth/login/json` | Login (JSON para clientes REST) | ❌ |
 | GET | `/api/v1/auth/me` | Dados do usuário logado | ✅ |
+
+**Nota**: Use `/login` no Swagger UI (botão Authorize) e `/login/json` para requisições via Postman/Frontend.
 
 ### Usuários
 
@@ -234,24 +325,63 @@ python -m app.cli seed --admin-only
 
 ## 🚢 Deploy
 
-### Docker
+### Docker Compose (Produção)
 
 ```bash
-# Build
+# Build e run em produção
+docker-compose up -d --build
+
+# Ver logs
+docker-compose logs -f
+
+# Parar
+docker-compose down
+```
+
+### Docker Image (Manual)
+
+```bash
+# Build da imagem
 docker build -t fastapi-ecommerce .
 
-# Run
-docker run -p 8000:8000 fastapi-ecommerce
+# Run com variáveis de ambiente
+docker run -d \
+  -p 8000:8000 \
+  -e POSTGRES_HOST=seu-host \
+  -e POSTGRES_DB=ecommerce \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=senha \
+  -e SECRET_KEY=sua-chave-secreta \
+  fastapi-ecommerce
 ```
 
 ### Plataformas Recomendadas
 
-- Railway
-- Render
-- Fly.io
-- DigitalOcean App Platform
+- **Railway**: Deploy automático com PostgreSQL incluído
+- **Render**: Free tier disponível
+- **Fly.io**: Global edge deployment
+- **DigitalOcean App Platform**: Fácil configuração
+- **AWS ECS/Fargate**: Para produção enterprise
 
-## 📝 Variáveis de Ambiente
+## � Docker
+
+O projeto inclui configuração completa de Docker:
+
+- **Dockerfile multi-stage**: Build otimizado e leve
+- **docker-compose.yml**: PostgreSQL + API
+- **Health checks**: Monitoramento automático
+- **Volumes persistentes**: Dados do PostgreSQL
+- **Network isolado**: Segurança entre containers
+
+### Estrutura Docker
+
+```yaml
+services:
+  postgres:    # PostgreSQL 16
+  api:         # FastAPI Application
+```
+
+## �📝 Variáveis de Ambiente
 
 | Variável | Descrição | Exemplo |
 |----------|-----------|---------|

@@ -1,15 +1,14 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
-
 
 
 class Settings(BaseSettings):
     # App
-    APP_NAME: str = 'FastAPI E-commerce API'
+    APP_NAME: str = "FastAPI E-commerce API"
     DEBUG: bool = True
 
     # Database
-    POSTGRES_HOST: str = Field(default='localhost')
+    POSTGRES_HOST: str = Field(default="localhost")
     POSTGRES_PORT: int = Field(default=5432)
     POSTGRES_DB: str
     POSTGRES_USER: str
@@ -17,6 +16,10 @@ class Settings(BaseSettings):
 
     # JWT
     SECRET_KEY: str
+
+    model_config = SettingsConfigDict(
+        env_file=".env", case_sensitive=True, extra="ignore"  # Ignora variáveis extras
+    )
 
     @property
     def DATABASE_URL(self) -> str:
@@ -27,8 +30,5 @@ class Settings(BaseSettings):
             f"/{self.POSTGRES_DB}"
         )
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
 
 settings = Settings()
