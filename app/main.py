@@ -6,6 +6,7 @@ from app.auth.router import router as auth_router
 from app.products.router import router as products_router
 from app.categories.router import router as categories_router
 from app.orders.router import router as orders_router
+from app.users.router import router as users_router
 from app.core.config import settings
 from app.database.session import get_db
 
@@ -18,6 +19,7 @@ app.include_router(auth_router)
 app.include_router(products_router)
 app.include_router(categories_router)
 app.include_router(orders_router)
+app.include_router(users_router)
 
 
 @app.get("/health")
